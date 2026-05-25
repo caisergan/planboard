@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en" data-planboard-version="1">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sample Plan</title>
+  <meta name="planboard:type" content="plan">
+  <meta name="planboard:project" content="test-project">
+  <meta name="planboard:created" content="2026-05-20">
+  <meta name="planboard:status" content="in-progress">
+  <meta name="planboard:total-tasks" content="4">
+  <meta name="planboard:completed-tasks" content="2">
+  <style>
+    :root { --bg: #0f172a; --text: #e2e8f0; --accent: #818cf8; --success: #4ade80; --warning: #fbbf24; --muted: #64748b; }
+    body { font-family: system-ui; background: var(--bg); color: var(--text); max-width: 800px; margin: 0 auto; padding: 2rem; }
+    h1 { color: var(--accent); }
+    [data-task-status="done"] { text-decoration: line-through; color: var(--muted); }
+    [data-task-status="active"] { color: var(--warning); }
+  </style>
+</head>
+<body>
+  <header data-section="header">
+    <h1>Sample Plan</h1>
+    <p class="meta">Project: test-project | Created: 2026-05-20 | Status: in-progress</p>
+  </header>
+  <section data-section="overview">
+    <h2>Overview</h2>
+    <p>A sample plan for testing purposes.</p>
+  </section>
+  <section data-section="phases">
+    <h2>Phases</h2>
+    <div data-phase="1" data-phase-status="in-progress">
+      <h3>Phase 1: Setup</h3>
+      <ul data-task-list>
+        <li data-task-id="1" data-task-status="done">Initialize project</li>
+        <li data-task-id="2" data-task-status="done">Add dependencies</li>
+        <li data-task-id="3" data-task-status="active">Write tests</li>
+        <li data-task-id="4" data-task-status="pending">Implement feature</li>
+      </ul>
+    </div>
+  </section>
+  <section data-section="notes">
+    <h2>Notes</h2>
+    <ul>
+      <li>This is a test fixture</li>
+    </ul>
+  </section>
+</body>
+</html>
