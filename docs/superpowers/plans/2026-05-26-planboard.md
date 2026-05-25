@@ -10,6 +10,20 @@
 
 ---
 
+## Phases Overview
+
+| Phase | Name | Tasks | Outcome |
+|-------|------|-------|---------|
+| 1 | Foundation | 1–3 | Project compiles, config loads, test fixtures in place |
+| 2 | Backend Core | 4–7 | Can scan directories, extract metadata, read/write files, toggle tasks |
+| 3 | Backend Services | 8–11 | Full server runs — API, WebSocket, file watching, all wired together |
+| 4 | Frontend | 12–17 | Complete dashboard UI — sidebar, plan viewer, markdown viewer, live updates |
+| 5 | Tools & Production | 18–23 | Converter, CLI, hooks, production binary, integration tests |
+
+Each phase produces working, independently testable software. Phases are sequential — each depends on the previous.
+
+---
+
 ## File Structure
 
 ```
@@ -72,6 +86,14 @@ planboard/
 ├── go.mod
 └── go.sum
 ```
+
+---
+
+---
+
+# Phase 1: Foundation
+
+> Project compiles, config loads, test fixtures in place.
 
 ---
 
@@ -515,6 +537,14 @@ This is a markdown plan that predates planboard.
 git add testdata/
 git commit -m "feat: add test data fixtures for HTML and MD plans"
 ```
+
+---
+
+---
+
+# Phase 2: Backend Core
+
+> Can scan directories, extract metadata, read/write HTML files, toggle task statuses.
 
 ---
 
@@ -1418,6 +1448,14 @@ Expected: All tests PASS
 git add internal/fileio/
 git commit -m "feat: add task toggle writer with atomic writes and self-write tracking"
 ```
+
+---
+
+---
+
+# Phase 3: Backend Services
+
+> Full server runs — REST API, WebSocket broadcasting, file watching, all wired in main.go.
 
 ---
 
@@ -2373,6 +2411,14 @@ git commit -m "feat: wire up main entry point with server, scanner, and watcher"
 
 ---
 
+---
+
+# Phase 4: Frontend
+
+> Complete dashboard UI — sidebar with project tree, interactive plan viewer, markdown renderer, live WebSocket updates.
+
+---
+
 ## Task 12: Frontend Scaffold
 
 **Files:**
@@ -3154,6 +3200,14 @@ Expected: Open http://localhost:5173, see Planboard with projects in sidebar
 git add frontend/src/App.tsx
 git commit -m "feat: wire App with Sidebar, PlanViewer, and MarkdownViewer"
 ```
+
+---
+
+---
+
+# Phase 5: Tools & Production
+
+> MD converter, CLI subcommands, Claude Code hook, production binary with embedded frontend, integration tests.
 
 ---
 
