@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 )
 
@@ -50,7 +51,22 @@ func Load(path string) (*Config, error) {
 		cfg.Roots[i] = expandTilde(root)
 	}
 
+	applyEnvOverrides(cfg)
+
 	return cfg, nil
+}
+
+func applyEnvOverrides(cfg *Config) {
+	if v := os.Getenv("PLANBOARD_PORT"); v != "" {
+		if port, err := strconv.Atoi(v); err == nil {
+			cfg.Server.Port = port
+		}
+	}
+	if v := os.Getenv("PLANBOARD_FRONTEND_PORT"); v != "" {
+		if port, err := strconv.Atoi(v); err == nil {
+			cfg.Server.FrontendPort = port
+		}
+	}
 }
 
 func (c *Config) Save(path string) error {

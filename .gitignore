@@ -4,3 +4,5 @@ frontend/node_modules/
 .superpowers/
 tmp/
 .air.toml
+.env
+planboard
