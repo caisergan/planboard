@@ -39,6 +39,8 @@ func run() error {
 			return runScan()
 		case "init":
 			return runProjectInit()
+		case "install-hook":
+			return runInstallHook()
 		}
 	}
 	return runServer()
@@ -102,6 +104,69 @@ func runScan() error {
 
 func runProjectInit() error {
 	fmt.Println("Project init: creates .planboard-active (not yet implemented)")
+	return nil
+}
+
+func runInstallHook() error {
+	home, err := os.UserHomeDir()
+	if err != nil {
+		return fmt.Errorf("cannot determine home directory: %w", err)
+	}
+
+	hookDir := filepath.Join(home, ".config", "planboard", "hooks")
+	if err := os.MkdirAll(hookDir, 0755); err != nil {
+		return err
+	}
+
+	hookPath := filepath.Join(hookDir, "planboard-sync.sh")
+	hookContent := `#!/bin/bash
+PROJECT_DIR="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
+
+if [ -f "$PROJECT_DIR/.planboard-active" ]; then
+  PLAN_FILE="$PROJECT_DIR/$(cat "$PROJECT_DIR/.planboard-active")"
+else
+  PLAN_FILE=$(find "$PROJECT_DIR/docs" -name "*.html" -path "*/plans/*" 2>/dev/null | sort -r | head -1)
+fi
+
+if [ -z "$PLAN_FILE" ] || [ ! -f "$PLAN_FILE" ]; then
+  exit 0
+fi
+
+if command -v md5sum &>/dev/null; then
+  HASH=$(echo "$PROJECT_DIR" | md5sum | cut -c1-8)
+elif command -v md5 &>/dev/null; then
+  HASH=$(md5 -q -s "$PROJECT_DIR")
+else
+  HASH=$(echo "$PROJECT_DIR" | cksum | cut -d' ' -f1)
+fi
+
+STATE_FILE="/tmp/planboard-mtime-$HASH"
+
+if [ "$(uname)" = "Darwin" ]; then
+  CURRENT_MTIME=$(stat -f %m "$PLAN_FILE" 2>/dev/null)
+else
+  CURRENT_MTIME=$(stat -c %Y "$PLAN_FILE" 2>/dev/null)
+fi
+
+if [ -f "$STATE_FILE" ]; then
+  LAST_MTIME=$(cat "$STATE_FILE")
+  if [ "$CURRENT_MTIME" != "$LAST_MTIME" ]; then
+    echo "PLANBOARD: Plan file was modified externally."
+    echo "  File: $PLAN_FILE"
+    echo "  Re-read this file for updated task states."
+  fi
+fi
+
+echo "$CURRENT_MTIME" > "$STATE_FILE"
+`
+
+	if err := os.WriteFile(hookPath, []byte(hookContent), 0755); err != nil {
+		return err
+	}
+
+	fmt.Printf("Hook installed at %s\n", hookPath)
+	fmt.Println("Add to your .claude/settings.json:")
+	fmt.Println(`  "hooks": { "user-prompt-submit": [{ "command": "` + hookPath + `" }] }`)
 	return nil
 }
 
