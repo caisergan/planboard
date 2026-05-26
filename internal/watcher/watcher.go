@@ -1,6 +1,7 @@
 package watcher
 
 import (
+	"log"
 	"path/filepath"
 	"sync"
 	"time"
@@ -65,8 +66,10 @@ func (w *Watcher) Start() {
 				return
 			}
 			w.handleEvent(event)
-		case <-w.fsw.Errors:
-			// log errors but continue watching
+		case err, ok := <-w.fsw.Errors:
+			if ok && err != nil {
+				log.Printf("watcher error: %v", err)
+			}
 		case <-ticker.C:
 			fileio.CleanSelfWrites()
 		case <-w.done:

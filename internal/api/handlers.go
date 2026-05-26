@@ -19,7 +19,7 @@ func (s *Server) handleProjects(w http.ResponseWriter, r *http.Request) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
-	var projects []ProjectSummary
+	projects := make([]ProjectSummary, 0, len(s.index))
 	for name, files := range s.index {
 		projects = append(projects, ProjectSummary{
 			Name:      name,
