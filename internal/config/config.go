@@ -2,6 +2,7 @@ package config
 
 import (
 	"encoding/json"
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -40,8 +41,8 @@ func Load(path string) (*Config, error) {
 		return nil, err
 	}
 
-	var cfg Config
-	if err := json.Unmarshal(data, &cfg); err != nil {
+	cfg := Default()
+	if err := json.Unmarshal(data, cfg); err != nil {
 		return nil, err
 	}
 
@@ -49,7 +50,7 @@ func Load(path string) (*Config, error) {
 		cfg.Roots[i] = expandTilde(root)
 	}
 
-	return &cfg, nil
+	return cfg, nil
 }
 
 func (c *Config) Save(path string) error {
@@ -66,13 +67,23 @@ func (c *Config) Save(path string) error {
 	return os.WriteFile(path, data, 0644)
 }
 
-func ConfigPath() string {
-	home, _ := os.UserHomeDir()
-	return filepath.Join(home, ".config", "planboard", "config.json")
+func ConfigPath() (string, error) {
+	home, err := os.UserHomeDir()
+	if err != nil {
+		return "", fmt.Errorf("cannot determine home directory: %w", err)
+	}
+	return filepath.Join(home, ".config", "planboard", "config.json"), nil
 }
 
 func expandTilde(path string) string {
-	if !strings.HasPrefix(path, "~") {
+	if path == "~" {
+		home, err := os.UserHomeDir()
+		if err != nil {
+			return path
+		}
+		return home
+	}
+	if !strings.HasPrefix(path, "~/") {
 		return path
 	}
 	home, err := os.UserHomeDir()
