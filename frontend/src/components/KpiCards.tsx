@@ -1,14 +1,12 @@
+import { ComponentChildren } from 'preact'
 import type { FileMetadata } from '../lib/types'
+import { useTheme, fonts } from '../lib/theme'
+import { AnimatedNumber } from './AnimatedNumber'
+import { FolderIcon, DocumentIcon, CheckCircleIcon, ClockIcon } from './Icons'
 
 interface Props {
   projectCount: number
   files: Record<string, FileMetadata[]>
-}
-
-interface Kpi {
-  label: string
-  value: string
-  color: string
 }
 
 export function KpiCards({ projectCount, files }: Props) {
@@ -17,30 +15,34 @@ export function KpiCards({ projectCount, files }: Props) {
   const tasksDone = allFiles.reduce((sum, f) => sum + (f.completed_tasks || 0), 0)
   const inProgress = allFiles.filter(f => f.status === 'in-progress').length
 
-  const kpis: Kpi[] = [
-    { label: 'Projects', value: String(projectCount), color: '#818cf8' },
-    { label: 'Total Files', value: totalFiles.toLocaleString(), color: '#e2e8f0' },
-    { label: 'Tasks Done', value: String(tasksDone), color: '#4ade80' },
-    { label: 'In Progress', value: String(inProgress), color: '#fbbf24' },
-  ]
-
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px', marginBottom: '1.5rem' }}>
-      {kpis.map(kpi => (
-        <div key={kpi.label} style={{
-          background: '#1e293b',
-          borderRadius: '10px',
-          padding: '16px',
-          border: '1px solid #334155',
-        }}>
-          <div style={{ fontSize: '0.65rem', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-            {kpi.label}
-          </div>
-          <div style={{ fontSize: '1.8rem', color: kpi.color, fontWeight: 700, marginTop: '4px' }}>
-            {kpi.value}
-          </div>
+    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 14, marginBottom: 28 }}>
+      <StatCard icon={<FolderIcon width={20} height={20} />} value={projectCount} label="Projects" />
+      <StatCard icon={<DocumentIcon width={20} height={20} />} value={totalFiles} label="Total Files" />
+      <StatCard icon={<CheckCircleIcon width={20} height={20} />} value={tasksDone} label="Tasks Done" />
+      <StatCard icon={<ClockIcon width={20} height={20} />} value={inProgress} label="In Progress" />
+    </div>
+  )
+}
+
+function StatCard({ icon, value, label }: { icon: ComponentChildren; value: number; label: string }) {
+  const { theme } = useTheme()
+  return (
+    <div style={{
+      background: theme.bg.card, borderRadius: 12, padding: '20px 22px',
+      display: 'flex', alignItems: 'center', gap: 16,
+      border: `1px solid ${theme.border.default}`, transition: 'border-color 0.2s',
+    }}>
+      <div style={{
+        width: 42, height: 42, borderRadius: 10, display: 'grid', placeItems: 'center',
+        background: theme.accent.dim, color: theme.accent.main, flexShrink: 0,
+      }}>{icon}</div>
+      <div>
+        <div style={{ fontSize: 26, fontWeight: 700, color: theme.text.primary, lineHeight: 1.1, fontFamily: fonts.mono }}>
+          <AnimatedNumber value={value} />
         </div>
-      ))}
+        <div style={{ fontSize: 13, color: theme.text.muted, marginTop: 2 }}>{label}</div>
+      </div>
     </div>
   )
 }

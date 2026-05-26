@@ -199,7 +199,7 @@ func runServer() error {
 	hub := api.NewHub()
 	go hub.Run()
 
-	srv := api.NewServerWithHub(index, cfg, hub)
+	srv := api.NewServerWithHub(index, cfg, hub, s)
 
 	watchDirs, _ := s.WatchDirs()
 	if len(watchDirs) > 0 {

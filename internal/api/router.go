@@ -9,10 +9,11 @@ import (
 )
 
 type Server struct {
-	index scanner.ProjectIndex
-	cfg   *config.Config
-	hub   *Hub
-	mu    sync.RWMutex
+	index   scanner.ProjectIndex
+	cfg     *config.Config
+	hub     *Hub
+	scanner *scanner.Scanner
+	mu      sync.RWMutex
 }
 
 type ProjectSummary struct {
@@ -27,11 +28,12 @@ func NewServer(index scanner.ProjectIndex, cfg *config.Config) *Server {
 	}
 }
 
-func NewServerWithHub(index scanner.ProjectIndex, cfg *config.Config, hub *Hub) *Server {
+func NewServerWithHub(index scanner.ProjectIndex, cfg *config.Config, hub *Hub, sc *scanner.Scanner) *Server {
 	return &Server{
-		index: index,
-		cfg:   cfg,
-		hub:   hub,
+		index:   index,
+		cfg:     cfg,
+		hub:     hub,
+		scanner: sc,
 	}
 }
 
@@ -51,6 +53,7 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc("PATCH /api/files/tasks", s.handleToggleTask)
 	mux.HandleFunc("POST /api/convert", s.handleConvert)
 	mux.HandleFunc("GET /api/config", s.handleGetConfig)
+	mux.HandleFunc("POST /api/rescan", s.handleRescan)
 
 	if s.hub != nil {
 		mux.HandleFunc("/ws", s.handleWebSocket)

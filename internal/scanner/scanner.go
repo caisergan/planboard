@@ -85,6 +85,10 @@ func (s *Scanner) scanProject(projectPath string) ([]*FileMetadata, error) {
 				continue
 			}
 
+			if info, err := os.Stat(match); err == nil {
+				meta.ModifiedAt = info.ModTime().UTC().Format("2006-01-02T15:04:05Z")
+			}
+
 			files = append(files, meta)
 		}
 	}

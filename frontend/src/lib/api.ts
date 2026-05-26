@@ -18,6 +18,12 @@ export async function fetchFile(path: string): Promise<FileResult> {
   return res.json()
 }
 
+export async function rescan(): Promise<{ projects: number; files: number }> {
+  const res = await fetch('/api/rescan', { method: 'POST' })
+  if (!res.ok) throw new Error(`Rescan failed: ${res.status}`)
+  return res.json()
+}
+
 export async function toggleTask(path: string, taskId: string, status: string): Promise<FileMetadata> {
   const res = await fetch('/api/files/tasks', {
     method: 'PATCH',

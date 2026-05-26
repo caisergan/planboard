@@ -9,6 +9,7 @@ export interface FileMetadata {
   version: number
   path: string
   format: 'html' | 'md'
+  modified_at: string
 }
 
 export interface ProjectSummary {

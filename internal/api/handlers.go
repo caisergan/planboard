@@ -141,6 +141,38 @@ func (s *Server) handleGetConfig(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(s.cfg)
 }
 
+func (s *Server) handleRescan(w http.ResponseWriter, r *http.Request) {
+	if s.scanner == nil {
+		http.Error(w, "scanner not configured", http.StatusInternalServerError)
+		return
+	}
+
+	index, err := s.scanner.Scan()
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	s.UpdateIndex(index)
+
+	totalFiles := 0
+	for _, files := range index {
+		totalFiles += len(files)
+	}
+
+	if s.hub != nil {
+		s.hub.Broadcast(WSEvent{
+			Type: "scan-complete",
+		})
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]int{
+		"projects": len(index),
+		"files":    totalFiles,
+	})
+}
+
 func (s *Server) isPathAllowed(path string) bool {
 	if s.cfg == nil {
 		return true

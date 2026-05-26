@@ -1,5 +1,9 @@
+import { useState } from 'preact/hooks'
 import type { FileMetadata } from '../lib/types'
+import { useTheme, fonts } from '../lib/theme'
+import { ProgressRing } from './ProgressRing'
 import { ProgressBar } from './ProgressBar'
+import { TypeBadge } from './TypeBadge'
 
 interface Props {
   name: string
@@ -8,83 +12,68 @@ interface Props {
 }
 
 export function ProjectCard({ name, files, onClick }: Props) {
-  const plans = files.filter(f => f.type === 'plan')
-  const specs = files.filter(f => f.type === 'spec')
+  const { theme } = useTheme()
+  const [hovered, setHovered] = useState(false)
+
+  const plans = files.filter(f => f.type === 'plan').length
+  const specs = files.filter(f => f.type === 'spec').length
   const totalTasks = files.reduce((sum, f) => sum + (f.total_tasks || 0), 0)
   const completedTasks = files.reduce((sum, f) => sum + (f.completed_tasks || 0), 0)
   const pct = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0
 
-  const pctColor = pct >= 75 ? '#4ade80' : pct >= 25 ? '#fbbf24' : '#818cf8'
+  const description = [
+    plans > 0 ? `${plans} plan${plans > 1 ? 's' : ''}` : '',
+    specs > 0 ? `${specs} spec${specs > 1 ? 's' : ''}` : '',
+  ].filter(Boolean).join(' · ') || `${files.length} files`
 
-  const recentTitles = files
-    .filter(f => f.title)
-    .slice(0, 3)
-    .map(f => f.title)
-  const overflow = Math.max(0, files.length - 3)
-
-  const countParts: string[] = []
-  if (plans.length > 0) countParts.push(`${plans.length} plan${plans.length > 1 ? 's' : ''}`)
-  if (specs.length > 0) countParts.push(`${specs.length} spec${specs.length > 1 ? 's' : ''}`)
-  if (totalTasks > 0) countParts.push(`${totalTasks} tasks`)
+  const dates = files.map(f => f.modified_at || f.created).filter(Boolean).sort()
+  const lastModified = dates.length > 0 ? dates[dates.length - 1] : ''
 
   return (
     <div
       onClick={onClick}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
       style={{
-        background: '#1e293b',
-        borderRadius: '10px',
-        padding: '16px',
-        border: '1px solid #334155',
-        cursor: 'pointer',
-        transition: 'border-color 0.15s',
+        background: hovered ? theme.bg.cardHover : theme.bg.card,
+        borderRadius: 14, padding: 22, cursor: 'pointer',
+        border: `1px solid ${hovered ? theme.accent.main + '44' : theme.border.default}`,
+        boxShadow: hovered ? '0 8px 24px rgba(0,0,0,0.12)' : '0 2px 8px rgba(0,0,0,0.06)',
+        transition: 'all 0.2s ease',
+        transform: hovered ? 'translateY(-2px)' : 'none',
       }}
-      onMouseEnter={(e) => (e.currentTarget.style.borderColor = '#475569')}
-      onMouseLeave={(e) => (e.currentTarget.style.borderColor = '#334155')}
     >
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', marginBottom: '8px' }}>
-        <div style={{ fontSize: '0.9rem', color: '#f1f5f9', fontWeight: 600 }}>{name}</div>
-        {totalTasks > 0 && (
-          <span style={{
-            fontSize: '0.6rem',
-            padding: '2px 6px',
-            background: `${pctColor}22`,
-            color: pctColor,
-            borderRadius: '3px',
-            fontWeight: 500,
-          }}>
-            {pct}%
-          </span>
-        )}
+      <div style={{ display: 'flex', alignItems: 'flex-start', gap: 16, marginBottom: 16 }}>
+        {totalTasks > 0 && <ProgressRing percentage={pct} size={58} strokeWidth={4} />}
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{
+            fontSize: 16, fontWeight: 600, color: theme.text.primary,
+            marginBottom: 4, fontFamily: fonts.mono,
+            whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+          }}>{name}</div>
+          <div style={{ fontSize: 13, color: theme.text.muted, lineHeight: 1.4 }}>
+            {description}
+          </div>
+        </div>
       </div>
 
-      <div style={{ fontSize: '0.7rem', color: '#64748b', marginBottom: '10px' }}>
-        {countParts.join(' · ') || `${files.length} files`}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <span style={{ fontSize: 13, color: theme.text.secondary, fontFamily: fonts.mono }}>
+          {files.length} file{files.length !== 1 ? 's' : ''}
+        </span>
+        <div style={{ display: 'flex', gap: 6 }}>
+          {plans > 0 && <TypeBadge type="plan" />}
+          {specs > 0 && <TypeBadge type="spec" />}
+        </div>
       </div>
 
-      {totalTasks > 0 && <ProgressBar completed={completedTasks} total={totalTasks} />}
-
-      {recentTitles.length > 0 && (
-        <div style={{ display: 'flex', gap: '4px', marginTop: '10px', flexWrap: 'wrap' }}>
-          {recentTitles.map(title => (
-            <span key={title} style={{
-              fontSize: '0.6rem',
-              padding: '1px 5px',
-              background: '#818cf822',
-              color: '#818cf8',
-              borderRadius: '3px',
-              maxWidth: '120px',
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-              whiteSpace: 'nowrap',
-            }}>
-              {title}
-            </span>
-          ))}
-          {overflow > 0 && (
-            <span style={{ fontSize: '0.6rem', padding: '1px 5px', background: '#64748b22', color: '#64748b', borderRadius: '3px' }}>
-              +{overflow}
-            </span>
-          )}
+      {totalTasks > 0 && (
+        <div style={{ marginTop: 14 }}>
+          <ProgressBar completed={completedTasks} total={totalTasks} height={3} showLabel={false} />
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 6, fontSize: 11, color: theme.text.muted, fontFamily: fonts.mono }}>
+            <span>{completedTasks} / {totalTasks} tasks</span>
+            {lastModified && <span>{lastModified}</span>}
+          </div>
         </div>
       )}
     </div>

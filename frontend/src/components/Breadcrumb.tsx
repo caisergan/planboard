@@ -1,12 +1,15 @@
 import type { Route } from './Router'
+import { useTheme } from '../lib/theme'
+import { ChevronRightIcon } from './Icons'
 
 interface Props {
   route: Route
-  connected: boolean
   onNavigate: (route: Route) => void
 }
 
-export function Breadcrumb({ route, connected, onNavigate }: Props) {
+export function Breadcrumb({ route, onNavigate }: Props) {
+  const { theme } = useTheme()
+
   const segments: { label: string; route?: Route }[] = [
     { label: 'Home', route: { page: 'home' } },
   ]
@@ -25,42 +28,30 @@ export function Breadcrumb({ route, connected, onNavigate }: Props) {
     segments.push({ label: route.fileTitle || 'Plan' })
   }
 
+  if (segments.length <= 1) return null
+
   return (
-    <div style={{
-      fontSize: '0.75rem',
-      color: '#64748b',
-      marginBottom: '1.25rem',
-      display: 'flex',
-      alignItems: 'center',
-      gap: '6px',
-    }}>
+    <nav style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 14, color: theme.text.muted, flexWrap: 'wrap', marginBottom: 20 }}>
       {segments.map((seg, i) => {
         const isLast = i === segments.length - 1
         return (
-          <span key={i} style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-            {i > 0 && <span style={{ color: '#475569' }}>/</span>}
+          <span key={i} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            {i > 0 && <ChevronRightIcon style={{ opacity: 0.4 }} />}
             {seg.route && !isLast ? (
               <span
                 onClick={() => onNavigate(seg.route!)}
-                style={{ color: '#818cf8', cursor: 'pointer' }}
+                style={{ color: theme.text.secondary, cursor: 'pointer', transition: 'color 0.15s' }}
+                onMouseEnter={(e) => ((e.target as HTMLElement).style.color = theme.text.primary)}
+                onMouseLeave={(e) => ((e.target as HTMLElement).style.color = theme.text.secondary)}
               >
                 {seg.label}
               </span>
             ) : (
-              <span style={{ color: isLast ? '#e2e8f0' : '#818cf8' }}>{seg.label}</span>
+              <span style={{ color: theme.text.primary, fontWeight: 500 }}>{seg.label}</span>
             )}
           </span>
         )
       })}
-      <span style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '4px' }}>
-        <span style={{
-          width: '6px',
-          height: '6px',
-          borderRadius: '50%',
-          background: connected ? '#4ade80' : '#ef4444',
-        }} />
-        <span style={{ fontSize: '0.65rem' }}>{connected ? 'Live' : 'Disconnected'}</span>
-      </span>
-    </div>
+    </nav>
   )
 }

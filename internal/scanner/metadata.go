@@ -22,6 +22,7 @@ type FileMetadata struct {
 	Version        int    `json:"version"`
 	Path           string `json:"path"`
 	Format         string `json:"format"`
+	ModifiedAt     string `json:"modified_at"`
 }
 
 func ExtractHTMLMetadata(path string) (*FileMetadata, error) {

@@ -1,4 +1,7 @@
+import { useState } from 'preact/hooks'
 import type { FileMetadata } from '../lib/types'
+import { useTheme, fonts } from '../lib/theme'
+import { TypeIcon } from './TypeIcon'
 import { StatusBadge } from './StatusBadge'
 import { ProgressBar } from './ProgressBar'
 
@@ -8,60 +11,42 @@ interface Props {
 }
 
 export function FileCard({ file, onClick }: Props) {
-  const icon = file.format === 'html' ? '◆' : '◇'
-  const iconColor = file.format === 'html' ? '#818cf8' : '#94a3b8'
-  const hasTasks = file.total_tasks > 0
+  const { theme } = useTheme()
+  const [hovered, setHovered] = useState(false)
 
   return (
     <div
       onClick={onClick}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
       style={{
-        background: '#1e293b',
-        borderRadius: '10px',
-        padding: '14px',
-        border: '1px solid #334155',
-        cursor: 'pointer',
-        transition: 'border-color 0.15s',
+        background: hovered ? theme.bg.cardHover : theme.bg.card,
+        borderRadius: 12, padding: 18, cursor: 'pointer',
+        border: `1px solid ${hovered ? theme.accent.main + '44' : theme.border.default}`,
+        boxShadow: hovered ? '0 6px 20px rgba(0,0,0,0.1)' : '0 2px 6px rgba(0,0,0,0.04)',
+        transition: 'all 0.2s ease',
+        transform: hovered ? 'translateY(-1px)' : 'none',
       }}
-      onMouseEnter={(e) => (e.currentTarget.style.borderColor = '#475569')}
-      onMouseLeave={(e) => (e.currentTarget.style.borderColor = '#334155')}
     >
-      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '6px' }}>
-        <span style={{ color: iconColor, fontSize: '0.7rem' }}>{icon}</span>
-        <span style={{
-          fontSize: '0.85rem',
-          color: '#f1f5f9',
-          fontWeight: 500,
-          overflow: 'hidden',
-          textOverflow: 'ellipsis',
-          whiteSpace: 'nowrap',
-          flex: 1,
-        }}>
-          {file.title || 'Untitled'}
-        </span>
+      <div style={{ display: 'flex', alignItems: 'flex-start', gap: 14, marginBottom: 14 }}>
+        <TypeIcon type={file.type || 'plan'} size={38} />
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{
+            fontSize: 15, fontWeight: 600, color: theme.text.primary, marginBottom: 6,
+            whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+          }}>{file.title || 'Untitled'}</div>
+          <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap' }}>
+            {file.status && <StatusBadge status={file.status} />}
+            <span style={{ fontSize: 11, color: theme.text.muted, fontFamily: fonts.mono }}>
+              .{file.format}
+            </span>
+          </div>
+        </div>
       </div>
 
-      <div style={{ fontSize: '0.7rem', color: '#64748b', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '4px' }}>
-        <span>{file.type || 'file'}</span>
-        {file.created && (
-          <>
-            <span style={{ color: '#475569' }}>·</span>
-            <span>{file.created}</span>
-          </>
-        )}
-        {file.status && (
-          <>
-            <span style={{ color: '#475569' }}>·</span>
-            <StatusBadge status={file.status} />
-          </>
-        )}
-      </div>
-
-      {hasTasks && <ProgressBar completed={file.completed_tasks} total={file.total_tasks} />}
-
-      <div style={{ fontSize: '0.65rem', color: '#64748b', marginTop: '6px' }}>
-        {hasTasks ? `${file.completed_tasks}/${file.total_tasks} tasks done` : 'design document'}
-      </div>
+      {file.total_tasks > 0 && (
+        <ProgressBar completed={file.completed_tasks} total={file.total_tasks} height={3} />
+      )}
     </div>
   )
 }

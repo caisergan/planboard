@@ -1,27 +1,19 @@
+import { useTheme, fonts } from '../lib/theme'
+
 interface Props {
   status: string
 }
 
-const colors: Record<string, string> = {
-  'done': '#4ade80',
-  'in-progress': '#fbbf24',
-  'pending': '#64748b',
-}
-
 export function StatusBadge({ status }: Props) {
-  const color = colors[status] || colors.pending
+  const { theme } = useTheme()
+  const c = theme.status[status as keyof typeof theme.status] || theme.status.pending
   return (
     <span style={{
-      fontSize: '0.65rem',
-      padding: '1px 5px',
-      borderRadius: '3px',
-      background: `${color}22`,
-      color: color,
-      textTransform: 'uppercase',
-      letterSpacing: '0.03em',
-      fontWeight: 500,
+      display: 'inline-flex', alignItems: 'center', fontSize: 11, fontWeight: 600,
+      padding: '3px 8px', borderRadius: 6, background: c.bg, color: c.text,
+      textTransform: 'uppercase', letterSpacing: '0.04em', fontFamily: fonts.mono,
     }}>
-      {status}
+      {status.replace('-', ' ')}
     </span>
   )
 }

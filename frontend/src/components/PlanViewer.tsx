@@ -1,12 +1,19 @@
 import { useState, useEffect, useRef } from 'preact/hooks'
 import type { FileResult } from '../lib/types'
+import type { Route } from './Router'
 import { fetchFile } from '../lib/api'
+import { useTheme, fonts } from '../lib/theme'
 import { TaskList } from './TaskList'
 import { ProgressBar } from './ProgressBar'
 import { StatusBadge } from './StatusBadge'
+import { TypeIcon } from './TypeIcon'
+import { TypeBadge } from './TypeBadge'
+import { CheckCircleIcon } from './Icons'
 
 interface Props {
   path: string
+  projectName?: string
+  onNavigate?: (route: Route) => void
 }
 
 interface Phase {
@@ -17,19 +24,24 @@ interface Phase {
 }
 
 export function PlanViewer({ path }: Props) {
+  const { theme } = useTheme()
   const [file, setFile] = useState<FileResult | null>(null)
   const [phases, setPhases] = useState<Phase[]>([])
   const [error, setError] = useState<string | null>(null)
   const [viewMode, setViewMode] = useState<'document' | 'tasks'>('document')
-  const iframeRef = useRef<HTMLIFrameElement>(null)
 
   async function load() {
     try {
       setError(null)
+      setViewMode('document')
+      setPhases([])
       const result = await fetchFile(path)
       setFile(result)
       if (result.format === 'html') {
-        setPhases(parsePhases(result.content))
+        const parsed = parsePhases(result.content)
+        setPhases(parsed)
+        const hasParsedTasks = parsed.reduce((s, p) => s + p.tasks.length, 0) > 0
+        if (hasParsedTasks) setViewMode('tasks')
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load plan')
@@ -38,11 +50,12 @@ export function PlanViewer({ path }: Props) {
 
   useEffect(() => { load() }, [path])
 
-  if (error) return <p style={{ color: '#ef4444' }}>{error}</p>
-  if (!file) return <p style={{ color: '#64748b' }}>Loading...</p>
+  if (error) return <p style={{ color: '#f87171', padding: 20 }}>{error}</p>
+  if (!file) return <p style={{ color: theme.text.muted, textAlign: 'center', marginTop: '4rem' }}>Loading...</p>
 
   const totalTasks = phases.reduce((sum, p) => sum + p.tasks.length, 0)
   const doneTasks = phases.reduce((sum, p) => sum + p.tasks.filter(t => t.status === 'done').length, 0)
+  const pct = totalTasks > 0 ? Math.round((doneTasks / totalTasks) * 100) : 0
   const hasTasks = totalTasks > 0
 
   if (file.format === 'md') {
@@ -51,124 +64,127 @@ export function PlanViewer({ path }: Props) {
 
   return (
     <div>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '4px' }}>
-        <h2 style={{ fontSize: '1.3rem', color: '#f1f5f9', fontWeight: 600, margin: 0 }}>{file.metadata.title}</h2>
-        {file.metadata.status && <StatusBadge status={file.metadata.status} />}
-      </div>
-      <div style={{ fontSize: '0.75rem', color: '#64748b', marginBottom: '1rem' }}>
-        {file.metadata.project} · {file.metadata.created}
-      </div>
-
-      {hasTasks && <ProgressBar completed={doneTasks} total={totalTasks} />}
-
-      {hasTasks && (
-        <div style={{ display: 'flex', gap: '8px', margin: '1rem 0' }}>
-          <button
-            onClick={() => setViewMode('document')}
-            style={{
-              padding: '5px 14px',
-              fontSize: '0.75rem',
-              borderRadius: '6px',
-              border: 'none',
-              cursor: 'pointer',
-              background: viewMode === 'document' ? '#818cf822' : '#1e293b',
-              color: viewMode === 'document' ? '#818cf8' : '#64748b',
-            }}
-          >
-            Document
-          </button>
-          <button
-            onClick={() => setViewMode('tasks')}
-            style={{
-              padding: '5px 14px',
-              fontSize: '0.75rem',
-              borderRadius: '6px',
-              border: 'none',
-              cursor: 'pointer',
-              background: viewMode === 'tasks' ? '#818cf822' : '#1e293b',
-              color: viewMode === 'tasks' ? '#818cf8' : '#64748b',
-            }}
-          >
-            Tasks ({doneTasks}/{totalTasks})
-          </button>
-        </div>
-      )}
-
-      {viewMode === 'document' && (
-        <div style={{ marginTop: '1rem' }}>
-          <iframe
-            ref={iframeRef}
-            srcDoc={file.content}
-            style={{
-              width: '100%',
-              border: '1px solid #334155',
-              borderRadius: '10px',
-              background: '#0f172a',
-              minHeight: '500px',
-            }}
-            onLoad={() => {
-              if (iframeRef.current) {
-                const body = iframeRef.current.contentDocument?.body
-                if (body) {
-                  iframeRef.current.style.height = body.scrollHeight + 40 + 'px'
-                }
-              }
-            }}
-            sandbox="allow-same-origin"
-          />
-
+      <div style={{
+        background: theme.bg.card, borderRadius: 14, padding: '22px 26px',
+        border: `1px solid ${theme.border.default}`, marginBottom: 20,
+      }}>
+        <div style={{ display: 'flex', alignItems: 'flex-start', gap: 16, flexWrap: 'wrap' }}>
+          <TypeIcon type={file.metadata.type || 'plan'} size={44} />
+          <div style={{ flex: 1, minWidth: 200 }}>
+            <h1 style={{ fontSize: 20, fontWeight: 700, color: theme.text.primary, margin: 0 }}>{file.metadata.title}</h1>
+            <div style={{ display: 'flex', gap: 8, marginTop: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+              {file.metadata.status && <StatusBadge status={file.metadata.status} />}
+              {file.metadata.type && <TypeBadge type={file.metadata.type} />}
+              <span style={{ fontSize: 12, color: theme.text.muted, fontFamily: fonts.mono }}>
+                {file.metadata.format.toUpperCase()} · {file.metadata.created}
+              </span>
+            </div>
+          </div>
           {hasTasks && (
-            <div style={{
-              marginTop: '1rem',
-              background: '#1e293b',
-              border: '1px solid #334155',
-              borderRadius: '10px',
-              padding: '16px',
-            }}>
-              <details>
-                <summary style={{
-                  color: '#818cf8',
-                  cursor: 'pointer',
-                  fontSize: '0.85rem',
-                  fontWeight: 500,
-                  marginBottom: '8px',
-                }}>
-                  Task Controls ({doneTasks}/{totalTasks} done)
-                </summary>
-                <div style={{ marginTop: '8px' }}>
-                  {phases.map(phase => (
-                    <div key={phase.id} style={{ marginBottom: '12px' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '4px' }}>
-                        <span style={{ fontSize: '0.85rem', color: '#cbd5e1', fontWeight: 500 }}>{phase.title}</span>
-                        <StatusBadge status={phase.status} />
-                      </div>
-                      <TaskList tasks={phase.tasks} filePath={path} onToggle={load} />
-                    </div>
-                  ))}
-                </div>
-              </details>
+            <div style={{ textAlign: 'right' }}>
+              <div style={{ fontSize: 28, fontWeight: 700, color: theme.accent.main, fontFamily: fonts.mono, lineHeight: 1 }}>{pct}%</div>
+              <div style={{ fontSize: 11, color: theme.text.muted, marginTop: 2 }}>COMPLETE</div>
             </div>
           )}
         </div>
-      )}
+        {hasTasks && (
+          <div style={{ marginTop: 16 }}>
+            <ProgressBar completed={doneTasks} total={totalTasks} height={4} showLabel={false} />
+          </div>
+        )}
+      </div>
 
-      {viewMode === 'tasks' && (
-        <div style={{ marginTop: '0.5rem' }}>
-          {phases.map(phase => (
-            <div key={phase.id} style={{ marginBottom: '1.5rem' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
-                <h3 style={{ fontSize: '1.05rem', color: '#cbd5e1', fontWeight: 500, margin: 0 }}>{phase.title}</h3>
-                <StatusBadge status={phase.status} />
-              </div>
-              <ProgressBar
-                completed={phase.tasks.filter(t => t.status === 'done').length}
-                total={phase.tasks.length}
-              />
-              <TaskList tasks={phase.tasks} filePath={path} onToggle={load} />
-            </div>
+      {hasTasks && (
+        <div style={{
+          display: 'flex', gap: 4, marginBottom: 20,
+          background: theme.bg.card, borderRadius: 10, padding: 4,
+          width: 'fit-content', border: `1px solid ${theme.border.default}`,
+        }}>
+          {(['document', 'tasks'] as const).map(mode => (
+            <button
+              key={mode}
+              onClick={() => setViewMode(mode)}
+              style={{
+                padding: '8px 20px', borderRadius: 7, border: 'none', cursor: 'pointer',
+                fontSize: 13, fontWeight: 500, fontFamily: fonts.body,
+                background: viewMode === mode ? theme.accent.dim : 'transparent',
+                color: viewMode === mode ? theme.accent.main : theme.text.secondary,
+                transition: 'all 0.15s ease',
+              }}
+            >
+              {mode === 'document' ? 'Document' : 'Tasks'}
+            </button>
           ))}
         </div>
       )}
+
+      {viewMode === 'document' && <DocumentView html={file.content} />}
+      {viewMode === 'tasks' && hasTasks && <TasksView phases={phases} filePath={path} onToggle={load} />}
+    </div>
+  )
+}
+
+function DocumentView({ html }: { html: string }) {
+  const { theme } = useTheme()
+  const iframeRef = useRef<HTMLIFrameElement>(null)
+
+  return (
+    <div style={{
+      background: theme.bg.card, borderRadius: 14,
+      border: `1px solid ${theme.border.default}`, overflow: 'hidden',
+    }}>
+      <iframe
+        ref={iframeRef}
+        srcDoc={html}
+        style={{ width: '100%', border: 'none', background: theme.bg.base, minHeight: 500, display: 'block' }}
+        onLoad={() => {
+          if (iframeRef.current) {
+            const body = iframeRef.current.contentDocument?.body
+            if (body) iframeRef.current.style.height = body.scrollHeight + 40 + 'px'
+          }
+        }}
+        sandbox="allow-same-origin"
+      />
+    </div>
+  )
+}
+
+function TasksView({ phases, filePath, onToggle }: { phases: Phase[]; filePath: string; onToggle: () => void }) {
+  const { theme } = useTheme()
+  const totalDone = phases.reduce((s, p) => s + p.tasks.filter(i => i.status === 'done').length, 0)
+  const totalAll = phases.reduce((s, p) => s + p.tasks.length, 0)
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+      <div style={{
+        display: 'flex', alignItems: 'center', gap: 10, padding: '12px 16px',
+        background: theme.accent.dim, borderRadius: 10, fontSize: 14, color: theme.accent.text,
+        fontFamily: fonts.mono,
+      }}>
+        <CheckCircleIcon width={16} height={16} style={{ color: theme.accent.main }} />
+        {totalDone} of {totalAll} tasks completed
+      </div>
+
+      {phases.map(ph => {
+        const phaseDone = ph.tasks.filter(t => t.status === 'done').length
+        return (
+          <div key={ph.id} style={{
+            background: theme.bg.card, borderRadius: 14,
+            border: `1px solid ${theme.border.default}`, overflow: 'hidden',
+          }}>
+            <div style={{
+              padding: '14px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+              borderBottom: `1px solid ${theme.border.default}`,
+            }}>
+              <span style={{ fontSize: 14, fontWeight: 600, color: theme.text.primary }}>{ph.title}</span>
+              <span style={{ fontSize: 12, color: theme.text.muted, fontFamily: fonts.mono }}>
+                {phaseDone}/{ph.tasks.length}
+              </span>
+            </div>
+            <TaskList tasks={ph.tasks} filePath={filePath} onToggle={onToggle} />
+          </div>
+        )
+      })}
     </div>
   )
 }
@@ -217,6 +233,7 @@ marked.use({
 })
 
 function MarkdownContent({ content, metadata }: { content: string; metadata: any }) {
+  const { theme } = useTheme()
   const [html, setHtml] = useState('')
 
   useEffect(() => {
@@ -233,32 +250,53 @@ function MarkdownContent({ content, metadata }: { content: string; metadata: any
     }
   }, [content])
 
+  const codeBg = theme.isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)'
+
   return (
     <div>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '1.5rem' }}>
-        <h2 style={{ fontSize: '1.3rem', color: '#f1f5f9', fontWeight: 600, margin: 0 }}>{metadata.title}</h2>
-        {metadata.status && <StatusBadge status={metadata.status} />}
-        <span style={{ fontSize: '0.65rem', color: '#64748b', padding: '2px 6px', border: '1px solid #334155', borderRadius: '4px' }}>
-          READ-ONLY
-        </span>
+      <div style={{
+        background: theme.bg.card, borderRadius: 14, padding: '22px 26px',
+        border: `1px solid ${theme.border.default}`, marginBottom: 20,
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <TypeIcon type={metadata.type || 'spec'} size={44} />
+          <div style={{ flex: 1 }}>
+            <h1 style={{ fontSize: 20, fontWeight: 700, color: theme.text.primary, margin: 0 }}>{metadata.title}</h1>
+            <div style={{ display: 'flex', gap: 8, marginTop: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+              {metadata.status && <StatusBadge status={metadata.status} />}
+              <span style={{
+                fontSize: 11, color: theme.text.muted, padding: '3px 8px',
+                border: `1px solid ${theme.border.default}`, borderRadius: 6,
+                fontFamily: fonts.mono, textTransform: 'uppercase',
+              }}>READ-ONLY</span>
+            </div>
+          </div>
+        </div>
       </div>
-      <div
-        class="markdown-body"
-        style={{ lineHeight: 1.75, color: '#cbd5e1', fontSize: '0.92rem' }}
-        dangerouslySetInnerHTML={{ __html: html }}
-      />
-      <style>{`
-        .markdown-body h1, .markdown-body h2, .markdown-body h3 { color: #f1f5f9; margin-top: 1.5em; margin-bottom: 0.5em; }
-        .markdown-body h1 { font-size: 1.4rem; } .markdown-body h2 { font-size: 1.2rem; } .markdown-body h3 { font-size: 1.05rem; }
-        .markdown-body p { margin-bottom: 0.75em; }
-        .markdown-body ul, .markdown-body ol { padding-left: 1.5em; margin-bottom: 0.75em; }
-        .markdown-body li { margin-bottom: 0.25em; }
-        .markdown-body code { background: #1e293b; padding: 2px 5px; border-radius: 3px; font-size: 0.85em; }
-        .markdown-body pre { background: #1e293b; padding: 1rem; border-radius: 8px; overflow-x: auto; margin-bottom: 1em; }
-        .markdown-body pre code { background: none; padding: 0; }
-        .markdown-body a { color: #818cf8; }
-        .markdown-body blockquote { border-left: 3px solid #334155; padding-left: 1em; color: #94a3b8; margin-bottom: 0.75em; }
-      `}</style>
+      <div style={{
+        background: theme.bg.card, borderRadius: 14, padding: '32px 36px',
+        border: `1px solid ${theme.border.default}`,
+      }}>
+        <div
+          class="markdown-body"
+          style={{ lineHeight: 1.75, color: theme.text.secondary, fontSize: '0.92rem' }}
+          dangerouslySetInnerHTML={{ __html: html }}
+        />
+        <style>{`
+          .markdown-body h1, .markdown-body h2, .markdown-body h3 { color: ${theme.text.primary}; margin-top: 1.5em; margin-bottom: 0.5em; }
+          .markdown-body h1 { font-size: 1.4rem; } .markdown-body h2 { font-size: 1.2rem; } .markdown-body h3 { font-size: 1.05rem; }
+          .markdown-body h2 { padding-bottom: 8px; border-bottom: 1px solid ${theme.border.default}; }
+          .markdown-body p { margin-bottom: 0.75em; }
+          .markdown-body ul, .markdown-body ol { padding-left: 1.5em; margin-bottom: 0.75em; }
+          .markdown-body li { margin-bottom: 0.25em; }
+          .markdown-body code { font-family: ${fonts.mono}; background: ${codeBg}; padding: 2px 6px; border-radius: 4px; font-size: 0.85em; color: ${theme.accent.text}; }
+          .markdown-body pre { background: ${theme.bg.surface}; border: 1px solid ${theme.border.default}; padding: 1rem; border-radius: 8px; overflow-x: auto; margin-bottom: 1em; }
+          .markdown-body pre code { background: none; padding: 0; }
+          .markdown-body a { color: ${theme.accent.text}; }
+          .markdown-body blockquote { border-left: 3px solid ${theme.border.light}; padding-left: 1em; color: ${theme.text.muted}; margin-bottom: 0.75em; }
+          .markdown-body strong { color: ${theme.text.primary}; }
+        `}</style>
+      </div>
     </div>
   )
 }

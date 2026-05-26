@@ -34,7 +34,7 @@ export function useFileIndex() {
   }, [loadProjects])
 
   const handleWSEvent = useCallback((event: WSEvent) => {
-    if (event.type === 'file-changed' || event.type === 'file-added' || event.type === 'file-deleted') {
+    if (event.type === 'file-changed' || event.type === 'file-added' || event.type === 'file-deleted' || event.type === 'scan-complete') {
       loadProjects()
     }
   }, [loadProjects])

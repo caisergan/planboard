@@ -1,7 +1,7 @@
 import { useState } from 'preact/hooks'
 import type { FileMetadata } from '../lib/types'
 import type { Route } from './Router'
-import { ProgressBar } from './ProgressBar'
+import { useTheme, fonts } from '../lib/theme'
 import { FilterTabs } from './FilterTabs'
 import { FileCard } from './FileCard'
 
@@ -12,6 +12,7 @@ interface Props {
 }
 
 export function ProjectDetailPage({ projectName, files, onNavigate }: Props) {
+  const { theme } = useTheme()
   const [filter, setFilter] = useState('all')
 
   const plans = files.filter(f => f.type === 'plan')
@@ -41,30 +42,34 @@ export function ProjectDetailPage({ projectName, files, onNavigate }: Props) {
 
   return (
     <div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
-        <div>
-          <h2 style={{ fontSize: '1.3rem', color: '#f1f5f9', fontWeight: 600, margin: 0 }}>{projectName}</h2>
-          <div style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '4px' }}>
-            {plans.length} plans · {specs.length} specs · {totalTasks} tasks · {pct}% complete
+      <div style={{
+        background: theme.bg.card, borderRadius: 14, padding: '24px 28px',
+        border: `1px solid ${theme.border.default}`, marginBottom: 24,
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 16 }}>
+          <div>
+            <h1 style={{ fontSize: 24, fontWeight: 700, color: theme.text.primary, margin: 0, fontFamily: fonts.mono }}>
+              {projectName}
+            </h1>
+            <p style={{ fontSize: 14, color: theme.text.muted, margin: '6px 0 0' }}>
+              {plans.length} plans · {specs.length} specs
+            </p>
+          </div>
+          <div style={{ display: 'flex', gap: 24 }}>
+            <MiniStat label="Plans" value={String(plans.length)} />
+            <MiniStat label="Specs" value={String(specs.length)} />
+            <MiniStat label="Tasks" value={`${completedTasks}/${totalTasks}`} />
+            <MiniStat label="Complete" value={`${pct}%`} />
           </div>
         </div>
-        {totalTasks > 0 && (
-          <div style={{ width: '120px' }}>
-            <ProgressBar completed={completedTasks} total={totalTasks} />
-          </div>
-        )}
       </div>
 
       <FilterTabs tabs={tabs} active={filter} onChange={setFilter} />
 
-      {filtered.length === 0 && (
-        <p style={{ color: '#64748b', textAlign: 'center', marginTop: '2rem' }}>No files match this filter</p>
-      )}
-
       <div style={{
         display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))',
-        gap: '10px',
+        gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))',
+        gap: 14,
       }}>
         {filtered.map(file => (
           <FileCard
@@ -78,6 +83,25 @@ export function ProjectDetailPage({ projectName, files, onNavigate }: Props) {
             })}
           />
         ))}
+        {filtered.length === 0 && (
+          <div style={{ gridColumn: '1 / -1', textAlign: 'center', padding: 40, color: theme.text.muted, fontSize: 14 }}>
+            No files match this filter
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
+function MiniStat({ label, value }: { label: string; value: string }) {
+  const { theme } = useTheme()
+  return (
+    <div style={{ textAlign: 'center' }}>
+      <div style={{ fontSize: 20, fontWeight: 700, color: theme.text.primary, fontFamily: fonts.mono, lineHeight: 1.1 }}>
+        {value}
+      </div>
+      <div style={{ fontSize: 11, color: theme.text.muted, marginTop: 2, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+        {label}
       </div>
     </div>
   )

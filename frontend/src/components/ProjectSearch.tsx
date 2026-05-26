@@ -1,35 +1,46 @@
+import { useState } from 'preact/hooks'
+import { useTheme, fonts } from '../lib/theme'
+import { SearchIcon } from './Icons'
+
 interface Props {
   value: string
   onChange: (value: string) => void
 }
 
 export function ProjectSearch({ value, onChange }: Props) {
+  const { theme } = useTheme()
+  const [focused, setFocused] = useState(false)
+
   return (
     <div style={{
-      background: '#1e293b',
-      border: '1px solid #334155',
-      borderRadius: '8px',
-      padding: '10px 14px',
-      marginBottom: '1.25rem',
-      display: 'flex',
-      alignItems: 'center',
-      gap: '8px',
+      position: 'relative', display: 'flex', alignItems: 'center',
+      background: theme.bg.input, borderRadius: 10, marginBottom: 24,
+      border: `1px solid ${focused ? theme.accent.main : theme.border.default}`,
+      boxShadow: focused ? `0 0 0 3px ${theme.accent.glow}` : 'none',
+      transition: 'border-color 0.2s, box-shadow 0.2s',
     }}>
-      <span style={{ color: '#475569', fontSize: '0.85rem' }}>&#128269;</span>
+      <div style={{ position: 'absolute', left: 14, color: theme.text.muted, pointerEvents: 'none', display: 'flex' }}>
+        <SearchIcon />
+      </div>
       <input
-        type="text"
-        placeholder="Search projects..."
         value={value}
         onInput={(e) => onChange((e.target as HTMLInputElement).value)}
+        onFocus={() => setFocused(true)}
+        onBlur={() => setFocused(false)}
+        placeholder="Search projects..."
         style={{
-          background: 'none',
-          border: 'none',
-          outline: 'none',
-          color: '#e2e8f0',
-          fontSize: '0.85rem',
-          width: '100%',
+          width: '100%', background: 'transparent', border: 'none', outline: 'none',
+          padding: '12px 14px 12px 42px', fontSize: 15, color: theme.text.primary,
+          fontFamily: fonts.body,
         }}
       />
+      {!value && !focused && (
+        <span style={{
+          position: 'absolute', right: 14, fontSize: 11, color: theme.text.muted,
+          background: theme.ring.track, padding: '2px 6px', borderRadius: 4,
+          fontFamily: fonts.mono,
+        }}>Cmd+K</span>
+      )}
     </div>
   )
 }
