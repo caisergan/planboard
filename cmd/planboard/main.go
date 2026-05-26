@@ -230,9 +230,27 @@ func runServer() error {
 	}
 
 	addr := fmt.Sprintf("127.0.0.1:%d", cfg.Server.Port)
+
+	var handler http.Handler
+	apiHandler := srv.Handler()
+	devMode := os.Getenv("PLANBOARD_DEV") == "1"
+
+	if devMode {
+		handler = apiHandler
+	} else {
+		static := staticFileHandler()
+		handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			if strings.HasPrefix(r.URL.Path, "/api/") || r.URL.Path == "/ws" {
+				apiHandler.ServeHTTP(w, r)
+				return
+			}
+			static.ServeHTTP(w, r)
+		})
+	}
+
 	httpSrv := &http.Server{
 		Addr:    addr,
-		Handler: srv.Handler(),
+		Handler: handler,
 	}
 
 	go func() {
