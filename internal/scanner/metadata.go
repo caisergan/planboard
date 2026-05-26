@@ -2,6 +2,7 @@ package scanner
 
 import (
 	"bufio"
+	"io"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -42,6 +43,9 @@ func ExtractHTMLMetadata(path string) (*FileMetadata, error) {
 		tt := tokenizer.Next()
 		switch tt {
 		case html.ErrorToken:
+			if err := tokenizer.Err(); err != nil && err != io.EOF {
+				return meta, err
+			}
 			return meta, nil
 		case html.StartTagToken, html.SelfClosingTagToken:
 			tn, hasAttr := tokenizer.TagName()

@@ -85,7 +85,6 @@ func (s *Scanner) scanProject(projectPath string) ([]*FileMetadata, error) {
 				continue
 			}
 
-			meta.Path = match
 			files = append(files, meta)
 		}
 	}
@@ -118,7 +117,7 @@ func (s *Scanner) WatchDirs() ([]string, error) {
 			}
 
 			projectPath := filepath.Join(root, entry.Name())
-			filepath.WalkDir(projectPath, func(path string, d os.DirEntry, err error) error {
+			_ = filepath.WalkDir(projectPath, func(path string, d os.DirEntry, err error) error {
 				if err != nil {
 					return nil
 				}
