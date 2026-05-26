@@ -14,7 +14,7 @@ func TestWebSocket_ReceivesBroadcast(t *testing.T) {
 	hub := NewHub()
 	go hub.Run()
 
-	srv := NewServerWithHub(nil, nil, hub)
+	srv := NewServerWithHub(nil, nil, hub, nil)
 	ts := httptest.NewServer(srv.Handler())
 	defer ts.Close()
 
@@ -55,7 +55,7 @@ func TestWebSocket_MultipleClients(t *testing.T) {
 	hub := NewHub()
 	go hub.Run()
 
-	srv := NewServerWithHub(nil, nil, hub)
+	srv := NewServerWithHub(nil, nil, hub, nil)
 	ts := httptest.NewServer(srv.Handler())
 	defer ts.Close()
 
@@ -96,7 +96,7 @@ func TestHub_ClientDisconnect(t *testing.T) {
 	hub := NewHub()
 	go hub.Run()
 
-	srv := NewServerWithHub(nil, nil, hub)
+	srv := NewServerWithHub(nil, nil, hub, nil)
 	ts := httptest.NewServer(srv.Handler())
 	defer ts.Close()
 

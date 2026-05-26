@@ -59,7 +59,7 @@ func TestIntegration_FullFlow(t *testing.T) {
 	hub := api.NewHub()
 	go hub.Run()
 
-	srv := api.NewServerWithHub(index, cfg, hub)
+	srv := api.NewServerWithHub(index, cfg, hub, s)
 	ts := httptest.NewServer(srv.Handler())
 	defer ts.Close()
 
