@@ -1,0 +1,21 @@
+{
+  "roots": [
+    "~/Desktop/personal-projects"
+  ],
+  "scan_patterns": [
+    "docs/**/*.html",
+    "docs/**/*.md"
+  ],
+  "exclude_patterns": [
+    "node_modules",
+    ".git",
+    "vendor"
+  ],
+  "server": {
+    "port": 8080,
+    "frontend_port": 5173
+  },
+  "watch": {
+    "debounce_ms": 100
+  }
+}
